@@ -1,15 +1,19 @@
 import gradio as gr
-from chromadb.utils import embedding_functions
-from werkzeug.utils import secure_filename
 
 import os
+import shutil
+import tempfile
 from pdf2image import convert_from_path
 import pytesseract
-import tempfile
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from openai import OpenAI
-import uuid
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+
+
 
 # Directory setup
 SUMMARY_STORE = "../plc_storage/data101_stored_prompts"
@@ -65,6 +69,29 @@ def submit_summary_and_material(summary_text, related_pdf, logistics_text):
         vectordb.add_texts([related_text], ids=[summary_id])
 
     return f"Summary and related material stored with ID: {summary_id}"
+
+def load_and_store_uploaded_pdf(filepath):
+    loader = PyPDFLoader(filepath)
+    pages = loader.load()
+    write_to_vectordb(pages)
+
+def write_to_vectordb(pages):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
+    splits = text_splitter.split_documents(pages)
+    persist_directory = "../plc_storage/data101_chroma_db"
+
+    global vectordb
+    if vectordb is not None:
+        vectordb = None  # Dereference
+
+    embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    vectordb = Chroma.from_documents(
+        documents=splits,
+        embedding=embedding_model,
+        persist_directory=persist_directory
+    )
+    vectordb.persist()
+    print(vectordb._collection.count())
 
 with gr.Blocks() as demo:
     with gr.Row():
