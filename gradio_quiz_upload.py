@@ -28,24 +28,12 @@ vectordb = Chroma(persist_directory=CHROMA_DB_DIR, embedding_function=embedding_
 def extract_text_from_pdf(file):
     if file is None:
         return ""
-
-    # Gradio's file is a NamedString, use .value to access bytes
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        tmp.write(file.value)  # <- fixed here
-        tmp_path = tmp.name
-
-    try:
-        # Convert each page of PDF to image
-        images = convert_from_path(tmp_path)
-
-        # OCR text from each image
-        text = ""
-        for img in images:
-            text += pytesseract.image_to_string(img)
-
-        return text
-    finally:
-        os.remove(tmp_path)
+    filepath = file.name  # Gradio provides the path to the uploaded file
+    images = convert_from_path(filepath)
+    text = ""
+    for img in images:
+        text += pytesseract.image_to_string(img)
+    return text
 
 def summarize_quiz(quiz_pdf):
     quiz_text = extract_text_from_pdf(quiz_pdf)
