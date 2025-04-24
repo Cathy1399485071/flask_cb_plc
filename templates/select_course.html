@@ -1,0 +1,17 @@
+<!-- templates/select_course.html -->
+<!doctype html>
+<html>
+<head><title>Select Course</title></head>
+<body>
+  <h2>Select Your Course</h2>
+  <form method="post" action="{{ url_for('select_course') }}">
+    <label for="course">Course:</label>
+    <select name="course" required>
+      <option value="data_science">Data Science</option>
+      <option value="data_101">Data 101</option>
+    </select>
+    <br><br>
+    <input type="submit" value="Enter Chat">
+  </form>
+</body>
+</html>
