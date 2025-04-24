@@ -24,28 +24,27 @@ openai_client = OpenAI(api_key="sk-proj-3rxgs7ADF4CeFJtUjqvNkweT4wXQrWLc3JuRg3BR
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectordb = Chroma(persist_directory=CHROMA_DB_DIR, embedding_function=embedding_model)
 
-# Extract text from a PDF file using PyMuPDF
+# Extract text from a PDF file using pytesseract
 def extract_text_from_pdf(file):
     if file is None:
         return ""
 
-    # Save uploaded file to a temporary path
+    # Gradio's file is a NamedString, use .value to access bytes
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        tmp.write(file.read())
+        tmp.write(file.value)  # <- fixed here
         tmp_path = tmp.name
 
     try:
-        # Convert PDF pages to images
+        # Convert each page of PDF to image
         images = convert_from_path(tmp_path)
 
-        # Extract text from each image using OCR
+        # OCR text from each image
         text = ""
         for img in images:
             text += pytesseract.image_to_string(img)
 
         return text
     finally:
-        # Clean up temp file
         os.remove(tmp_path)
 
 def summarize_quiz(quiz_pdf):
