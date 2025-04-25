@@ -43,7 +43,7 @@ def summarize_quiz(quiz_pdf):
     quiz_text = extract_text_from_pdf(quiz_pdf)
     if not quiz_text.strip():
         return "No content to summarize."
-    print("DEBUG - QUIZ TEXT" + quiz_text)
+    # print("DEBUG - QUIZ TEXT" + quiz_text)
     prompt = f"find 10 topics from this quiz: \n{quiz_text}"
     response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -63,11 +63,8 @@ def submit_summary_and_material(summary_text, related_pdf, logistics_text):
     if logistics_text.strip():
         with open(os.path.join(SUMMARY_STORE, "logistic_prompt.txt"), "w") as f:
             f.write(logistics_text)
-
-    related_text = extract_text_from_pdf(related_pdf)
-    if related_text.strip():
-        vectordb.add_texts([related_text], ids=[summary_id])
-
+    
+    load_and_store_uploaded_pdf(related_pdf)
     return f"Summary and related material stored with ID: {summary_id}"
 
 def load_and_store_uploaded_pdf(filepath):
