@@ -70,16 +70,24 @@ def submit_summary_and_material(summary_text, related_pdf, logistics_text):
 def load_and_store_uploaded_pdf(filepath):
     loader = PyPDFLoader(filepath)
     pages = loader.load()
+    print(f"Loaded {len(pages)} pages from PDF")
+    for i, p in enumerate(pages[:3]):
+        print(f"Page {i+1} content sample: {p.page_content[:100]}")
     write_to_vectordb(pages)
 
 def write_to_vectordb(pages):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
     splits = text_splitter.split_documents(pages)
+    print(f"Got {len(splits)} chunks after splitting")
+    if len(splits) == 0:
+        print("⚠️ No content to insert into ChromaDB")
+        return  # prevent crash
+
     persist_directory = "../plc_storage/data101_chroma_db"
 
     global vectordb
     if vectordb is not None:
-        vectordb = None  # Dereference
+        vectordb = None
 
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectordb = Chroma.from_documents(
@@ -88,7 +96,7 @@ def write_to_vectordb(pages):
         persist_directory=persist_directory
     )
     vectordb.persist()
-    print(vectordb._collection.count())
+    print(f"Inserted into ChromaDB: {vectordb._collection.count()} records")
 
 with gr.Blocks() as demo:
     with gr.Row():
