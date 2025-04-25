@@ -67,54 +67,80 @@ def submit_summary_and_material(summary_text, related_pdf, logistics_text):
     load_and_store_uploaded_pdf(related_pdf)
     return f"Summary and related material stored with ID: {summary_id}"
 
-def load_and_store_uploaded_pdf(filepath):
-    loader = PyPDFLoader(filepath)
-    pages = loader.load()
-    print(f"Loaded {len(pages)} pages from PDF")
-    for i, p in enumerate(pages[:3]):
-        print(f"Page {i+1} content sample: {p.page_content[:100]}")
-    write_to_vectordb(pages)
-
 def write_to_vectordb(pages):
+    # Check if there are pages to process
     if not pages or len(pages) == 0:
         print("No pages to process. Skipping vector DB insertion.")
         return
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
-    splits = text_splitter.split_documents(pages)
-    print(f"Got {len(splits)} chunks after splitting")
+    try:
+        # Split pages into smaller chunks
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
+        splits = text_splitter.split_documents(pages)
+        print(f"Got {len(splits)} chunks after splitting.")
+    except Exception as e:
+        print(f"Error during text splitting: {e}")
+        return
 
     if len(splits) == 0:
-        print("No content to insert into ChromaDB")
+        print("No content to insert into ChromaDB after splitting. Skipping.")
         return
 
     persist_directory = "../plc_storage/data101_chroma_db"
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    if os.path.exists(persist_directory):
-        try:
+    try:
+        # If ChromaDB already exists, load it
+        if os.path.exists(persist_directory):
             vectordb = Chroma(
                 persist_directory=persist_directory,
                 embedding_function=embedding_model
             )
             print("Loaded existing ChromaDB.")
-        except Exception as e:
-            print(f"Error loading existing ChromaDB: {e}")
-            return
-    else:
-        try:
+        else:
+            # Otherwise, create a new database with the documents
             vectordb = Chroma.from_documents(
                 documents=splits,
                 embedding=embedding_model,
                 persist_directory=persist_directory
             )
             print("Created new ChromaDB and inserted documents.")
-        except Exception as e:
-            print(f"Error creating new ChromaDB: {e}")
-            return
+    except Exception as e:
+        print(f"Error loading or creating ChromaDB: {e}")
+        return
 
-    vectordb.persist()
-    print("ChromaDB write complete.")
+    try:
+        vectordb.persist()
+        print("ChromaDB write complete.")
+    except Exception as e:
+        print(f"Error persisting ChromaDB: {e}")
+
+def load_and_store_uploaded_pdf(filepath):
+    # Check if filepath is valid
+    if not filepath:
+        print("No file path provided. Skipping PDF loading.")
+        return
+
+    try:
+        # Try loading the PDF
+        loader = PyPDFLoader(filepath)
+        pages = loader.load()
+        print(f"Loaded {len(pages)} pages from PDF.")
+    except Exception as e:
+        print(f"Error loading PDF file: {e}")
+        return
+
+    # If no pages were loaded, stop
+    if not pages or len(pages) == 0:
+        print("No pages found in the PDF. Skipping processing.")
+        return
+
+    # Preview sample pages
+    for i, page in enumerate(pages[:3]):
+        print(f"Page {i+1} content sample: {page.page_content[:100]}")
+
+    # Pass the pages to vector database storage
+    write_to_vectordb(pages)
 
 
 with gr.Blocks() as demo:
