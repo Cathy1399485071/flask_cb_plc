@@ -81,22 +81,31 @@ def write_to_vectordb(pages):
     print(f"Got {len(splits)} chunks after splitting")
     if len(splits) == 0:
         print("No content to insert into ChromaDB")
-        return  # prevent crash
+        return
 
     persist_directory = "../plc_storage/data101_chroma_db"
-
-    global vectordb
-    if vectordb is not None:
-        vectordb = None
-
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vectordb = Chroma.from_documents(
-        documents=splits,
-        embedding=embedding_model,
-        persist_directory=persist_directory
-    )
+
+    # Load existing DB or create if doesn't exist
+    try:
+        vectordb = Chroma(
+            persist_directory=persist_directory,
+            embedding_function=embedding_model
+        )
+        print("Loaded existing ChromaDB.")
+    except Exception as e:
+        print("Failed to load existing ChromaDB. Creating new one.")
+        vectordb = Chroma.from_documents(
+            documents=[],
+            embedding=embedding_model,
+            persist_directory=persist_directory
+        )
+
+    # Add new documents
+    vectordb.add_documents(splits)
     vectordb.persist()
-    print(f"Inserted into ChromaDB: {vectordb._collection.count()} records")
+    print(f"Updated ChromaDB: now has {vectordb._collection.count()} records")
+
 
 with gr.Blocks() as demo:
     with gr.Row():
