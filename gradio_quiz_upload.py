@@ -76,9 +76,14 @@ def load_and_store_uploaded_pdf(filepath):
     write_to_vectordb(pages)
 
 def write_to_vectordb(pages):
+    if not pages or len(pages) == 0:
+        print("No pages to process. Skipping vector DB insertion.")
+        return
+
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=150)
     splits = text_splitter.split_documents(pages)
     print(f"Got {len(splits)} chunks after splitting")
+
     if len(splits) == 0:
         print("No content to insert into ChromaDB")
         return
@@ -86,25 +91,30 @@ def write_to_vectordb(pages):
     persist_directory = "../plc_storage/data101_chroma_db"
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Load existing DB or create if doesn't exist
-    try:
-        vectordb = Chroma(
-            persist_directory=persist_directory,
-            embedding_function=embedding_model
-        )
-        print("Loaded existing ChromaDB.")
-    except Exception as e:
-        print("Failed to load existing ChromaDB. Creating new one.")
-        vectordb = Chroma.from_documents(
-            documents=[],
-            embedding=embedding_model,
-            persist_directory=persist_directory
-        )
+    if os.path.exists(persist_directory):
+        try:
+            vectordb = Chroma(
+                persist_directory=persist_directory,
+                embedding_function=embedding_model
+            )
+            print("Loaded existing ChromaDB.")
+        except Exception as e:
+            print(f"Error loading existing ChromaDB: {e}")
+            return
+    else:
+        try:
+            vectordb = Chroma.from_documents(
+                documents=splits,
+                embedding=embedding_model,
+                persist_directory=persist_directory
+            )
+            print("Created new ChromaDB and inserted documents.")
+        except Exception as e:
+            print(f"Error creating new ChromaDB: {e}")
+            return
 
-    # Add new documents
-    vectordb.add_documents(splits)
     vectordb.persist()
-    print(f"Updated ChromaDB: now has {vectordb._collection.count()} records")
+    print("ChromaDB write complete.")
 
 
 with gr.Blocks() as demo:
