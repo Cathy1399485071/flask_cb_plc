@@ -80,7 +80,7 @@ def write_to_vectordb(pages):
     splits = text_splitter.split_documents(pages)
     print(f"Got {len(splits)} chunks after splitting")
     if len(splits) == 0:
-        print("⚠️ No content to insert into ChromaDB")
+        print("No content to insert into ChromaDB")
         return  # prevent crash
 
     persist_directory = "../plc_storage/data101_chroma_db"
