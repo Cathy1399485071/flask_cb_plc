@@ -143,4 +143,4 @@ def chat():
     return render_template("chatbot.html", messages=session["messages"])
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=7860, debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)
