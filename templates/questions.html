@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Form Questions</title>
+</head>
+<body>
+    <h1>Collected Questions</h1>
+    <form method="get">
+        <button onclick="window.location.reload();">Refresh Questions</button>
+    </form>
+    <ul>
+        {% for q in questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

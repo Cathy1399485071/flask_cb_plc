@@ -3,6 +3,8 @@ from module.quiz_upload import handle_quiz_upload
 from module.chatbot import get_chatbot_response
 import os
 import csv
+from google.oauth2.service_account import Credentials
+import gspread
 
 app = Flask(__name__)
 app.secret_key = "test123"
@@ -10,13 +12,13 @@ app.secret_key = "test123"
 # Enforce login before every request (except a few routes)
 @app.before_request
 def require_login():
-    allowed_routes = ["login", "register", "static"]
+    allowed_routes = ["login", "register", "static", "questions"]
     if request.endpoint is None or (request.endpoint not in allowed_routes and "username" not in session):
         return redirect(url_for("login"))
 
 @app.route("/")
 def index():
-    return "Welcome! Visit /upload for professors and /chat for students."
+    return "Welcome! Visit /chat for students."
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -52,6 +54,31 @@ def register():
         return redirect(url_for("login"))
 
     return render_template("register.html")
+
+@app.route("/questions")
+def questions():
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    credentials = Credentials.from_service_account_file(
+        "responsecollection-dc52f198ecb4.json",  # UPDATE THIS PATH
+        scopes=scopes
+    )
+    client = gspread.authorize(credentials)
+
+    sheet = client.open("Questions Collection (Responses)").sheet1  # or use .open_by_key()
+    records = sheet.get_all_records()
+    all_questions = []
+
+    for row in records:
+        q = row.get("Please enter your questions here (each question is a new line.")
+        if q:
+            for line in q.strip().split('\n'):
+                if line.strip():
+                    all_questions.append(line.strip())
+
+    return render_template("questions.html", questions=all_questions)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -116,4 +143,4 @@ def chat():
     return render_template("chatbot.html", messages=session["messages"])
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host="0.0.0.0", port=7860, debug=True)
