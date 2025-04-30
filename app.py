@@ -67,7 +67,7 @@ def questions():
     )
     client = gspread.authorize(credentials)
 
-    sheet = client.open("Submit Your Questions for the Chatbot").sheet1  # or use .open_by_key()
+    sheet = client.open("Questions Collection (Responses)").sheet1  # or use .open_by_key()
     records = sheet.get_all_records()
     all_questions = []
 
