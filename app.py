@@ -67,12 +67,12 @@ def questions():
     )
     client = gspread.authorize(credentials)
 
-    sheet = client.open("Questions Collection (Responses)").sheet1  # or use .open_by_key()
+    sheet = client.open("Submit Your Questions for the Chatbot").sheet1  # or use .open_by_key()
     records = sheet.get_all_records()
     all_questions = []
 
     for row in records:
-        q = row.get("Please enter your questions here (each question is a new line.")
+        q = row.get("Please write your questions here (e.g., about lecture topics or assignments). One question per line.")
         if q:
             for line in q.strip().split('\n'):
                 if line.strip():
