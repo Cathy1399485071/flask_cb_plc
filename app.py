@@ -58,8 +58,8 @@ def register():
 @app.route("/questions")
 def questions():
     scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
+        "https://www.googleapis.com/auth/spreadsheets.readonly",
+        "https://www.googleapis.com/auth/drive.readonly"
     ]
     credentials = Credentials.from_service_account_file(
         "responsecollection-dc52f198ecb4.json",  # UPDATE THIS PATH
