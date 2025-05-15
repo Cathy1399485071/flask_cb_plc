@@ -22,7 +22,7 @@ CHROMA_DB_DIR = "../plc_storage/data101_chroma_db"
 os.makedirs(SUMMARY_STORE, exist_ok=True)
 
 # Initialize OpenAI
-openai_client = OpenAI(api_key="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")
+openai_client = OpenAI(api_key="OPENAI_API_KEY", model="gpt-3.5-turbo")
 
 # Initialize ChromaDB with HuggingFace embeddings
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
